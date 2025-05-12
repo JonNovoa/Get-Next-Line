@@ -1,18 +1,18 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_get_next_line.c                                 :+:      :+:    :+:   */
+/*   ft_get_nex_line.c                                  :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: jnovoa-a <jnovoa-a@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/05/08 17:28:39 by jnovoa-a          #+#    #+#             */
-/*   Updated: 2025/05/08 19:27:45 by jnovoa-a         ###   ########.fr       */
+/*   Created: 2025/05/12 16:25:08 by jnovoa-a          #+#    #+#             */
+/*   Updated: 2025/05/12 16:28:22 by jnovoa-a         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ft_get_next_line.h"
 
-static char	*ft_extract_line(char **stash)
+char	*ft_extract_line(char **stash)
 {
 	char	*line;
 	char	*new_stash;
@@ -29,7 +29,7 @@ static char	*ft_extract_line(char **stash)
 		len = nl_pos - *stash + 1;
 		line = ft_substr(*stash, 0, len);
 		new_stash = ft_substr(*stash, len, ft_strlen(*stash) - len);
-		free(stash);
+		free(*stash);
 		*stash = new_stash;
 	}
 	else
@@ -45,6 +45,7 @@ char	*ft_get_next_line(int fd)
 	static char	*stash;
 	char		buffer[BUFFER_SIZE + 1];
 	ssize_t		bytes_read;
+	char		*temp;
 
 	if (fd < 0 || BUFFER_SIZE <= 0)
 		return (NULL);
@@ -53,14 +54,16 @@ char	*ft_get_next_line(int fd)
 		bytes_read = read(fd, buffer, BUFFER_SIZE);
 		if (bytes_read < 0)
 		{
-			free(*stash);
+			free(stash);
 			stash = NULL;
 			return (NULL);
 		}
 		if (bytes_read == 0)
 			break ;
 		buffer[bytes_read] = '\0';
-		stash = ft_strjoin(stash, buffer);
+		temp = ft_strjoin(stash, buffer);
+		free(stash);
+		stash = temp;
 	}
 	return (ft_extract_line(&stash));
 }
