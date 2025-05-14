@@ -1,32 +1,30 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   ft_get_nex_line.c                                  :+:      :+:    :+:   */
+/*   get_next_line.c                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: jnovoa-a <jnovoa-a@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/12 16:25:08 by jnovoa-a          #+#    #+#             */
-/*   Updated: 2025/05/12 16:28:22 by jnovoa-a         ###   ########.fr       */
+/*   Updated: 2025/05/14 15:33:20 by jnovoa-a         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "ft_get_next_line.h"
+#include "get_next_line.h"
 
 char	*ft_extract_line(char **stash)
 {
 	char	*line;
 	char	*new_stash;
-	char	*nl_pos;
+	char	*nl;
 	size_t	len;
 
 	if (!*stash || !**stash)
-	{
 		return (NULL);
-	}
-	nl_pos = ft_strchr(*stash, '\n');
-	if (nl_pos)
+	nl = ft_strchr(*stash, '\n');
+	if (nl)
 	{
-		len = nl_pos - *stash + 1;
+		len = nl - *stash + 1;
 		line = ft_substr(*stash, 0, len);
 		new_stash = ft_substr(*stash, len, ft_strlen(*stash) - len);
 		free(*stash);
@@ -40,30 +38,47 @@ char	*ft_extract_line(char **stash)
 	return (line);
 }
 
-char	*ft_get_next_line(int fd)
+static int	read_and_fill_stash(int fd, char **stash)
+{
+	char	*buffer;
+	ssize_t	bytes;
+	char	*tmp;
+
+	buffer = malloc((size_t)BUFFER_SIZE + 1);
+	if (!buffer)
+		return (-1);
+	bytes = read(fd, buffer, BUFFER_SIZE);
+	while (bytes > 0)
+	{
+		buffer[bytes] = '\0';
+		tmp = ft_strjoin(*stash, buffer);
+		free(*stash);
+		*stash = tmp;
+		if (ft_strchr(*stash, '\n'))
+			break ;
+		bytes = read(fd, buffer, BUFFER_SIZE);
+	}
+	free(buffer);
+	return (bytes);
+}
+
+char	*get_next_line(int fd)
 {
 	static char	*stash;
-	char		buffer[BUFFER_SIZE + 1];
-	ssize_t		bytes_read;
-	char		*temp;
+	char		*result;
+	int			bytes;
 
 	if (fd < 0 || BUFFER_SIZE <= 0)
 		return (NULL);
-	while (!ft_strchr(stash, '\n'))
+	if (!stash)
+		stash = ft_strdup("");
+	bytes = read_and_fill_stash(fd, &stash);
+	if (bytes < 0)
 	{
-		bytes_read = read(fd, buffer, BUFFER_SIZE);
-		if (bytes_read < 0)
-		{
-			free(stash);
-			stash = NULL;
-			return (NULL);
-		}
-		if (bytes_read == 0)
-			break ;
-		buffer[bytes_read] = '\0';
-		temp = ft_strjoin(stash, buffer);
 		free(stash);
-		stash = temp;
+		stash = NULL;
+		return (NULL);
 	}
-	return (ft_extract_line(&stash));
+	result = ft_extract_line(&stash);
+	return (result);
 }
